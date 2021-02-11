@@ -30,28 +30,29 @@ router.get('/:server', async function (req, res) {
 	}
 
 	const meta = {}
-	const cacheKey = `goonhub-node:status-${server}`
+	const cacheKey = `${req.app.locals.cachePrefix}:status-${server}`
 
-	// check cache
-	let status = await redisGet(cacheKey)
+	try {
+		let status = await redisGet(cacheKey)
 
-	if (status) {
-		// cache hit
-		meta.cache = 'hit'
-		try {
-			status = JSON.parse(status)
-		} catch (e) {
-			// bad cache value
+		if (status) {
+			meta.cache = 'hit'
+			try {
+				status = JSON.parse(status)
+			} catch {
+				// bad cache value
+				status = await queryStatus(link)
+			}
+		} else {
+			meta.cache = 'miss'
 			status = await queryStatus(link)
+			redis.setex(cacheKey, 60, JSON.stringify(status))
 		}
-	} else {
-		// cache miss
-		meta.cache = 'miss'
-		status = await queryStatus(link)
-		redis.setex(cacheKey, 60, JSON.stringify(status))
-	}
 
-	res.send({ response: status, meta })
+		res.send({ response: status, meta })
+	} catch {
+		res.status(500).send({ message: 'Unable to query server' })
+	}
 })
 
 module.exports = router
