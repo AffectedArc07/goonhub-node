@@ -20,8 +20,8 @@ const buildLinks = function () {
 	}
 
 	links = []
-	for (const serverKey in serverConfig) {
-		const server = serverConfig[serverKey]
+	for (const serverKey in serverConfig.servers) {
+		const server = serverConfig.servers[serverKey]
 		if (server.active) {
 			console.log(`[byondlink] Support enabled for server '${serverKey}' at '${server.address}:${server.port}'`)
 			links.push({
