@@ -4,6 +4,7 @@ const logger = require('morgan')
 const cors = require('cors')
 
 const gameStatusRouter = require('./routes/game-status')
+const gameRelayRouter = require('./routes/game-relay')
 
 const app = express()
 
@@ -31,6 +32,7 @@ app.use(cors({
 
 // Routes
 app.use('/game-status', gameStatusRouter)
+app.use('/game-relay', gameRelayRouter)
 
 app.use(function (req, res) {
 	res.status(404).send({ error: "Sorry can't find that!" })
