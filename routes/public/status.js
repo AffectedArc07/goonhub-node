@@ -1,8 +1,6 @@
-const express = require('express')
-const router = express.Router()
-const { getLink: getByondLink, sendWithCache: sendToByondLink } = require('../plugins/byondlink')
+const { getLink: getByondLink, sendWithCache: sendToByondLink } = require('../../plugins/byondlink')
 
-router.get('/:server', async function (req, res) {
+const router = async function (req, res) {
 	const server = req.params.server || 'dev'
 	const link = getByondLink(server)
 
@@ -19,6 +17,6 @@ router.get('/:server', async function (req, res) {
 	} catch {
 		res.status(500).send({ message: 'Unable to query server' })
 	}
-})
+}
 
 module.exports = router
