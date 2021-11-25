@@ -7,18 +7,18 @@ const basicAuth = require('express-basic-auth')
 const RateLimit = require('express-rate-limit')
 const RedisStore = require('rate-limit-redis');
 
-const publicRoutes = require('./routes/public')
-const gameRelayRouter = require('./routes/private/relay')
-
 const app = express()
 
-app.locals.cachePrefix = process.env.REDIS_KEY_PREFIX || 'goonhub-node'
-
+app.use(cors({
+	origin: [
+		'https://goonhub.com'
+	],
+	optionsSuccessStatus: 200
+}))
 app.use(logger('dev'))
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
 app.use(cookieParser())
-app.use(cors())
 app.use(new RateLimit({
   store: new RedisStore({
 		client: redisClient,
@@ -30,6 +30,9 @@ app.use(new RateLimit({
 }))
 
 // Routes
+const publicRoutes = require('./routes/public')
+const gameRelayRouter = require('./routes/private/relay')
+
 app.use('/', publicRoutes)
 app.use('/wiz', basicAuth({
 	users: { [process.env.API_PRIVATE_USER]: process.env.API_PRIVATE_PASS }
