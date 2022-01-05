@@ -13,7 +13,7 @@ app.use(cors({
 	origin: [
 		'https://goonhub.com'
 	],
-	optionsSuccessStatus: 200
+	methods: 'GET'
 }))
 app.use(logger('dev'))
 app.use(express.json())

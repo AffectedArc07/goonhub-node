@@ -1,4 +1,4 @@
-const { send } = require('../../plugins/byondlink2')
+const { send } = require('../../plugins/byondlink')
 
 const relay = async function (req, res) {
 	const server = req.params.server || 'dev'

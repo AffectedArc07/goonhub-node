@@ -1,113 +1,108 @@
-const ByondLink = require('byondlink')
+const http2byond = require('http2byond')
 const fs = require('fs')
-const redis = require('../plugins/redis')
+const redis = require('./redis')
 const { promisify } = require('util')
 const redisGet = promisify(redis.get).bind(redis)
+const { REDIS_CACHE_PREFIX } = require('../utilities/defines')
 
-const configFile = process.env.GAME_SERVER_CONFIG || 'servers.example.conf'
-let links = []
+const Link = new http2byond()
+
+const goonConfigFile = process.env.GAME_SERVER_CONFIG || 'servers.example.conf'
+let goonServers
 
 /**
- * Build a list of ByondLink instances according to the global config
+ * Load the goon central config file
  */
-const buildLinks = function () {
-	let serverConfig = fs.readFileSync(configFile)
-	try {
-		serverConfig = JSON.parse(serverConfig)
-	} catch {
-		// preserve old data if the config file is busted
-		return
-	}
-
-	links = []
-	for (const serverKey in serverConfig.servers) {
-		const server = serverConfig.servers[serverKey]
-		if (server.active) {
-			console.log(`[byondlink] Support enabled for server '${serverKey}' at '${server.address}:${server.port}'`)
-			links.push({
-				server: serverKey,
-				link: new ByondLink(server.address, server.port)
-			})
-		}
-	}
+function loadGoonServers () {
+	const config = fs.readFileSync(goonConfigFile)
+	goonServers = JSON.parse(config)
 }
 
 /**
- * Get a ByondLink instance associated with a server
+ * Retrieve a goon server config object
  * @param {string} server The server ID
+ * @returns {object|null} The server object if found
  */
-const getLink = function (server) {
-	return links.find(link => link.server === server)?.link
-}
-
-/**
- * Send a query to a byond server
- * @param {object} link The ByondLink instance
- * @param {string} data URL encoded string of data to query byond with
- * @param {object} options
- * @param {boolean} options.ignoreSuffix Whether to ignore the predefined ByondLink suffix
- */
-const send = function (link, data, { ignoreSuffix = false } = {}) {
-	return new Promise((resolve, reject) => {
-		link.send(`?${data}`, (response) => {
-			// Response still has a terminating null byte. Maybe this lib sucks?
-			if (response?.replace) {
-				// eslint-disable-next-line no-control-regex
-				response = response.replace(new RegExp("\u0000", 'g'), '')
-			}
-			resolve(response)
-		}, ignoreSuffix)
-
-		link.on('error', (e) => {
-			reject(e)
-		})
-	})
-}
-
-/**
- * Send a query to a byond server, with caching!
- * @param {object} link The ByondLink instance
- * @param {string} data URL encoded string of data to query byond with
- * @param {string} cacheKey Redis cache key to save to
- * @param {object} options
- * @param {boolean} options.ignoreSuffix Whether to ignore the predefined ByondLink suffix
- * @param {number} options.cacheTime Expiry time of cached item in seconds
- */
-const sendWithCache = async function (link, data, cacheKey, { ignoreSuffix = false, cacheTime = 60 } = {}) {
-	let response = await redisGet(cacheKey)
-	const meta = {}
-
-	if (response) {
-		try {
-			meta.cache = 'hit'
-			response = JSON.parse(response)
-		} catch {
-			// bad cache value
-			meta.cache = 'miss'
-			response = await send(link, data, { ignoreSuffix })
+function getGoonServer (server) {
+	for (const serverKey in goonServers.servers) {
+		const cServer = goonServers.servers[serverKey]
+		if (server === serverKey && cServer.active) {
+			return cServer
 		}
-	} else {
-		meta.cache = 'miss'
-		response = await send(link, data, { ignoreSuffix })
-		redis.setex(cacheKey, cacheTime, JSON.stringify(response))
+	}
+	return null
+}
+
+/**
+ * Query a game server
+ * @param {object} conn Game server connection details
+ * @param {string} conn.ip The game server IP
+ * @param {string|number} conn.port The game server port
+ * @param {string} conn.server The goon server ID
+ * @param {string|object} topic The message to send
+ * @param {boolean} bypassCache Skip caching
+ * @param {number} cacheTime How long to cache for
+ * @returns {object} The game server response
+ */
+const send = async function (
+	{ ip = null, port = null, server = null } = {},
+	topic,
+	bypassCache = false,
+	cacheTime = 60
+) {
+	if (server) {
+		const serverConfig = getGoonServer(server)
+		if (serverConfig) {
+			ip = serverConfig.address
+			port = serverConfig.port
+		}
+	}
+	if (!ip || !port) throw new Error('Unable to figure out who to query')
+	if (typeof topic === 'object') topic = new URLSearchParams(topic).toString()
+
+	const cacheKey = `${REDIS_CACHE_PREFIX}:${ip}-${port}-${topic}`
+	const meta = { cache: 'miss' }
+	let response
+
+	if (!bypassCache) {
+		response = await redisGet(cacheKey)
+		if (response) {
+			try {
+				meta.cache = 'hit'
+				response = JSON.parse(response)
+			} catch {
+				// bad cache value
+				response = null
+			}
+		}
+	}
+
+	if (!response) {
+		response = await Link.run({ ip, port, topic })
+		// Response might still have a terminating null byte
+		if (response?.replace) {
+			// eslint-disable-next-line no-control-regex
+			response = response.replace(new RegExp("\u0000", 'g'), '')
+		}
+		if (response) redis.setex(cacheKey, cacheTime, JSON.stringify(response))
 	}
 
 	return { response, meta }
 }
 
-// Reload the ByondLink instances whenever the global config changes
+// Reload the parsed config object whenever the actual config file changes
 let fsTimeout
-fs.watch(configFile, (eventType) => {
+fs.watch(goonConfigFile, (eventType) => {
 	if (eventType === 'change' && !fsTimeout) {
 		// debounce because node fs.watch is unstable and sends multiple events per save often
 		fsTimeout = setTimeout(() => {
-			console.log(`[byondlink] Server config changed, rebuilding links`)
-			buildLinks()
+			console.log(`[byondlink] Server config changed, refetching`)
+			loadGoonServers()
 			fsTimeout = null
 		}, 1000)
 	}
 })
 
-buildLinks()
+loadGoonServers()
 
-module.exports = { getLink, send, sendWithCache }
+module.exports = { send }
