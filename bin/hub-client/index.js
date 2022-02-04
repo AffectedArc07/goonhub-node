@@ -1,5 +1,10 @@
 const fs = require('fs')
-const HubClient = require('./hubclient-stub')
+let HubClient
+if (fs.existsSync(`${__dirname}/hubclient.js`)) {
+	HubClient = require('./hubclient')
+} else {
+	HubClient = require('./hubclient-stub')
+}
 
 const cacheFile = `${__dirname}/hubdata`
 // const cacheTime = 1 * 60
