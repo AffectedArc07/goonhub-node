@@ -4,7 +4,7 @@ const routeStatus = require('./status')
 const routeBanner = require('./banner')
 const routeHub = require('./hub')
 
-router.get('/status/:server', routeStatus)
+router.get('/status', routeStatus)
 router.get('/banner', routeBanner)
 router.get('/hub', routeHub)
 

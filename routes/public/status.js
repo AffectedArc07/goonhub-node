@@ -1,11 +1,18 @@
 const { send } = require('../../plugins/byondlink')
 
 const router = async function (req, res) {
-	const server = req.params.server || 'dev'
+	const server = req.query.server
+	const ip = req.query.ip
+	const port = req.query.port
 
-	console.log('Hit status with ' + server)
 	try {
-		const data = await send({ server }, 'status')
+		const target = {}
+		if (server) target.server = server
+		else {
+			target.ip = ip
+			target.port = port
+		}
+		const data = await send(target, 'status')
 		res.send({
 			response: Object.fromEntries(new URLSearchParams(data.response)),
 			meta: data.meta
