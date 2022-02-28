@@ -10,12 +10,19 @@ const hubClientUpdate = require('./bin/hub-client')
 
 const app = express()
 
-app.use(cors({
-	origin: [
-		'https://goonhub.com'
-	],
-	methods: 'GET'
-}))
+if (process.env.NODE_ENV === 'production') {
+	app.use(cors({
+		origin: [
+			'https://goonhub.com',
+			'https://spacestation13.com',
+			'https://wiki.ss13.co'
+		],
+		methods: 'GET'
+	}))
+} else {
+	app.use(cors())
+}
+
 app.use(logger('dev'))
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
