@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "start": "pm2-runtime ecosystem.config.js --env production",
-    "dev": "pm2-dev ecosystem.dev.config.js"
+    "dev": "pm2-dev ecosystem.dev.config.js --env development"
   },
   "dependencies": {
     "canvas": "^2.8.0",

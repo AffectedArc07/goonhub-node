@@ -7,6 +7,10 @@ module.exports = {
 			'routes/public/banners',
 			'.git',
 			'bin/hub-client/hubdata'
-		]
+		],
+		env_development: {
+			NODE_ENV: "development",
+			PORT: 4000
+		}
   }]
 };
