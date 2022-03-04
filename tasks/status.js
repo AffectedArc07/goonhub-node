@@ -18,6 +18,7 @@ const task = new Task(
 	() => {
 		servers.forEach(server => {
 			send({ ip: server.ip, port: server.port }, 'status', true)
+				.catch(() => {})
 		})
 	}
 )

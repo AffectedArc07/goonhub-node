@@ -8,7 +8,11 @@ const hubClientUpdate = require('../bin/hub-client')
 const task = new Task(
 	'hub',
 	() => {
-		hubClientUpdate()
+		try {
+			hubClientUpdate()
+		} catch {
+			//
+		}
 	}
 )
 
