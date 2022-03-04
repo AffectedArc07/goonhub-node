@@ -6,7 +6,6 @@ const cors = require('cors')
 const basicAuth = require('express-basic-auth')
 const RateLimit = require('express-rate-limit')
 const RedisStore = require('rate-limit-redis');
-const hubClientUpdate = require('./bin/hub-client')
 
 const app = express()
 
@@ -56,9 +55,7 @@ app.use(function (err, req, res, next) {
 })
 
 if (process.env.NODE_ENV === 'production' && process.env.NODE_APP_INSTANCE === '0') {
-	setInterval(() => {
-		hubClientUpdate()
-	}, 1 * 60 * 1000)
+	require('./tasks')
 }
 
 module.exports = app

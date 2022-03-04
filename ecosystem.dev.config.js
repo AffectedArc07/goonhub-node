@@ -4,7 +4,7 @@ module.exports = {
     script: 'bin/www',
 		ignore_watch: [
 			'node_modules',
-			'routes/public/banners',
+			'utilities/banners',
 			'.git',
 			'bin/hub-client/hubdata'
 		],

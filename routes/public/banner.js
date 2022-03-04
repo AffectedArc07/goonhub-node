@@ -1,43 +1,7 @@
 const fs = require('fs')
-const { createCanvas, loadImage, registerFont } = require('canvas')
 const { send } = require('../../plugins/byondlink')
-
-registerFont(__dirname + '/banners/Play-Regular.ttf', { family: 'SS13-Banner' })
-registerFont(__dirname + '/banners/Play-Bold.ttf', { family: 'SS13-Banner', weight: 'bold' })
-
-const cacheTime = 60 // seconds
-const bannerBgOn = `${__dirname}/banners/base_on.png`
-const bannerBgOff = `${__dirname}/banners/base_off.png`
-
-async function createBanner(online, bannerFile, name, serverData = {}) {
-	const data = fs.readFileSync(online ? bannerBgOn : bannerBgOff)
-	const img = await loadImage(data)
-	const canvas = createCanvas(img.width, img.height)
-	const context = canvas.getContext('2d')
-	context.drawImage(img, 0, 0)
-
-	context.font = "bold 13.5pt 'SS13-Banner'"
-	context.fillStyle = online ? '#1b606f' : '#7f3524'
-	context.fillText(name, 7, 21)
-
-	context.font = "9pt 'SS13-Banner'"
-	context.fillStyle = '#fff'
-	let bannerText
-	if (online) {
-		bannerText = `Currently Playing, `
-		if (parseInt(serverData.players) === 1) {
-			bannerText += `there is 1 player.`
-		} else {
-			bannerText += `there are ${serverData.players} players.`
-		}
-	} else {
-		bannerText = 'ERROR COMMUNICATING WITH SERVER.'
-	}
-	context.fillText(bannerText, 125, 19)
-
-	const buffer = canvas.toBuffer('image/png')
-	fs.writeFileSync(bannerFile, buffer)
-}
+const { getBannerInfo, getCachedBanner, createBanner } = require('../../utilities/banners')
+const { pregenBanners } = require('../../tasks/banners')
 
 const router = async function (req, res) {
 	let name = req.query.name || ''
@@ -51,25 +15,33 @@ const router = async function (req, res) {
 		return res.status(400).end()
 	}
 
-	const bannerFile = `${__dirname}/banners/banner_${name}.png`
-
-	// Respond with cached banner based on last modified
-	if (fs.existsSync(bannerFile)) {
-		const fileStats = fs.statSync(bannerFile)
-		const lastModified = fileStats.mtimeMs
-		const diff = (new Date().getTime() - lastModified) / 1000
-		if (diff < cacheTime) {
-			return res.sendFile(bannerFile)
+	// If the banner is in our pregen task, assume it's generated in the background
+	// and just return it outright
+	const pregenBanner = pregenBanners.find(banner => {
+		return banner.name === name && banner.ip === address && banner.port === parseInt(port)
+	})
+	if (pregenBanner) {
+		const pregenBannerInfo = getBannerInfo(pregenBanner.name)
+		// It's technically possible for the banner to be in the pregen list, but not yet
+		// generated, due to task scheduling delays. This should be extremely rare.
+		if (fs.existsSync(pregenBannerInfo.path)) {
+			return res.sendFile(pregenBannerInfo.filename, { root: pregenBannerInfo.dir })
 		}
+	}
+
+	// Check for and return a cached banner if possible
+	const cachedBanner = getCachedBanner(name)
+	if (cachedBanner) {
+		return res.sendFile(cachedBanner.filename, { root: cachedBanner.dir })
 	}
 
 	try {
 		let serverData = await send({ ip: address, port }, 'status')
 		serverData = Object.fromEntries(new URLSearchParams(serverData.response))
-		await createBanner(true, bannerFile, name, serverData)
-		res.sendFile(bannerFile)
-	} catch {
-		res.status(500)
+		const { dir, filename } = await createBanner(true, name, serverData)
+		res.sendFile(filename, { root: dir })
+	} catch(e) {
+		res.status(500).send({ message: e })
 	}
 }
 

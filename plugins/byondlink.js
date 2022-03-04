@@ -105,4 +105,4 @@ fs.watch(goonConfigFile, (eventType) => {
 
 loadGoonServers()
 
-module.exports = { send }
+module.exports = { getGoonServer, send }
