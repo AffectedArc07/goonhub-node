@@ -23,7 +23,9 @@ const task = new Task(
 					const parsedData = Object.fromEntries(new URLSearchParams(serverData.response))
 					createBanner(true, banner.name, parsedData)
 				})
-				.catch(() => {})
+				.catch(() => {
+					createBanner(false, banner.name)
+				})
 		})
 	}
 )

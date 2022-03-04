@@ -35,13 +35,19 @@ const router = async function (req, res) {
 		return res.sendFile(cachedBanner.filename, { root: cachedBanner.dir })
 	}
 
+	let serverData
 	try {
-		let serverData = await send({ ip: address, port }, 'status')
+		serverData = await send({ ip: address, port }, 'status')
 		serverData = Object.fromEntries(new URLSearchParams(serverData.response))
-		const { dir, filename } = await createBanner(true, name, serverData)
+	} catch {
+		// suppress error
+	}
+
+	try {
+		const { dir, filename } = await createBanner(!!serverData, name, serverData || {})
 		res.sendFile(filename, { root: dir })
-	} catch(e) {
-		res.status(500).send({ message: e })
+	} catch {
+		res.status(500).send()
 	}
 }
 
