@@ -1,3 +1,3 @@
-blacklist.txt
+*.txt
 hubdata
 hubclient.js

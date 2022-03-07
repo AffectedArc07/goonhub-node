@@ -9,8 +9,13 @@ if (fs.existsSync(`${__dirname}/hubclient.js`)) {
 const cacheFile = `${__dirname}/hubdata`
 // const cacheTime = 1 * 60
 
-function getBlacklist() {
-	const data = fs.readFileSync(__dirname + '/blacklist.txt', { encoding: 'utf8', flag: 'r' })
+function getIllegalWordlist() {
+	const data = fs.readFileSync(__dirname + '/illegal.txt', { encoding: 'utf8', flag: 'r' })
+	return data.split(/\r?\n/).filter(w => w)
+}
+
+function getAdultWordlist() {
+	const data = fs.readFileSync(__dirname + '/adult.txt', { encoding: 'utf8', flag: 'r' })
 	return data.split(/\r?\n/).filter(w => w)
 }
 
@@ -20,14 +25,15 @@ function decodeQueryParam(p) {
 }
 
 function parseHubData(data) {
-	const blacklist = getBlacklist()
+	const illegalWords = getIllegalWordlist()
+	const adultWords = getAdultWordlist()
 	const decoded = decodeURIComponent(data)
 	const primarySplit = decoded.split(';worlds=')
 	const serverSplit = primarySplit[1].split('&')
 	const servers = []
 	serverSplit.forEach(server => {
 		const serverPieces = server.split(';')
-		// const id = serverPieces[0].split('=')[1]
+		const id = serverPieces[0].split('=')[1]
 		const urlId = serverPieces[1].split('=')[1]
 		let status = serverPieces[2].split('=')[1]
 		const players = parseInt(serverPieces[3].split('=')[1])
@@ -41,16 +47,23 @@ function parseHubData(data) {
 		}
 
 		if (!status) return
-		if (blacklist.some(v => status.includes(v))) {
-			// console.log('Bad words!', status)
-			return
-		}
 
-		servers.push({
+		const toAdd = {
+			id,
 			urlId,
 			players,
-			status
-		})
+			status,
+			meta: {}
+		}
+
+		if (illegalWords.some(v => status.includes(v))) {
+			return
+		}
+		if (adultWords.some(v => status.includes(v))) {
+			toAdd.meta.adult = true
+		}
+
+		servers.push(toAdd)
 	})
 	return servers
 }
