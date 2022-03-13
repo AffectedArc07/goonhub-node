@@ -13,7 +13,6 @@ let goonServers
 const jsonTopicServers = [
 	'sage.beestation13.com',
 	'acacia.beestation13.com',
-	'byond.paradisestation.org',
 	'game.austation.net'
 ]
 
