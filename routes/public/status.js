@@ -14,7 +14,7 @@ const router = async function (req, res) {
 		}
 		const data = await send(target, 'status')
 		res.send({
-			response: Object.fromEntries(new URLSearchParams(data.response)),
+			response: data.response,
 			meta: data.meta
 		})
 	} catch {

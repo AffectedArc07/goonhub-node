@@ -10,6 +10,13 @@ const Link = new http2byond()
 const goonConfigFile = process.env.GAME_SERVER_CONFIG || 'servers.example.conf'
 let goonServers
 
+const jsonTopicServers = [
+	'sage.beestation13.com',
+	'acacia.beestation13.com',
+	'byond.paradisestation.org',
+	'game.austation.net'
+]
+
 /**
  * Load the goon central config file
  */
@@ -60,8 +67,9 @@ const send = async function (
 	if (!ip || !port) throw new Error('Unable to figure out who to query')
 	if (typeof topic === 'object') topic = new URLSearchParams(topic).toString()
 
+	const isJSONTopic = jsonTopicServers.includes(ip)
 	const cacheKey = `${REDIS_CACHE_PREFIX}:${ip}-${port}-${topic}`
-	const meta = { cache: 'miss' }
+	const meta = { cache: 'miss', jsontopic: !!isJSONTopic }
 	let response
 
 	if (!bypassCache) {
@@ -78,12 +86,23 @@ const send = async function (
 	}
 
 	if (!response) {
+		if (isJSONTopic) {
+			topic = `{"query": "${topic}", "auth": "anonymous", "source": "spacestation13.com"}`
+		}
+
 		response = await Link.run({ ip, port, topic })
 		// Response might still have a terminating null byte
 		if (response?.replace) {
 			// eslint-disable-next-line no-control-regex
 			response = response.replace(new RegExp("\u0000", 'g'), '')
 		}
+
+		if (isJSONTopic) {
+			response = JSON.parse(response)
+		} else {
+			response = Object.fromEntries(new URLSearchParams(response))
+		}
+
 		if (response) redis.setex(cacheKey, cacheTime, JSON.stringify(response))
 	}
 
