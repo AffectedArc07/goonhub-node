@@ -1,0 +1,84 @@
+[
+  {
+    "_id": "86ce7363-c5f6-407e-91c0-50092db04c7a",
+    "colId": "history",
+    "containerId": "",
+    "name": "localhost:4000",
+    "url": "localhost:4000",
+    "method": "GET",
+    "sortNum": 0,
+    "created": "2023-03-12T01:03:31.135Z",
+    "modified": "2023-03-12T01:03:31.135Z",
+    "headers": [],
+    "params": [],
+    "tests": []
+  },
+  {
+    "_id": "02579be7-f0c8-4b8f-9faa-2ae923ade018",
+    "colId": "history",
+    "containerId": "",
+    "name": "localhost:4000/status",
+    "url": "localhost:4000/status",
+    "method": "GET",
+    "sortNum": 0,
+    "created": "2023-03-12T01:04:13.070Z",
+    "modified": "2023-03-12T01:04:13.070Z",
+    "headers": [],
+    "params": [],
+    "tests": []
+  },
+  {
+    "_id": "de451217-de8c-4930-a3bb-279e55a6f6fa",
+    "colId": "history",
+    "containerId": "",
+    "name": "localhost:4000/status/dev",
+    "url": "localhost:4000/status/dev",
+    "method": "GET",
+    "sortNum": 0,
+    "created": "2023-03-12T01:05:18.774Z",
+    "modified": "2023-03-12T01:05:18.774Z",
+    "headers": [],
+    "params": [],
+    "tests": []
+  },
+  {
+    "_id": "0334ef1d-8c81-4cd2-b7fd-1cea8bc90f5b",
+    "colId": "history",
+    "containerId": "",
+    "name": "localhost:4000/status?server=dev",
+    "url": "localhost:4000/status?server=dev",
+    "method": "GET",
+    "sortNum": 0,
+    "created": "2023-03-12T01:06:51.261Z",
+    "modified": "2023-03-12T01:06:51.261Z",
+    "headers": [],
+    "params": [
+      {
+        "name": "server",
+        "value": "dev",
+        "isPath": false
+      }
+    ],
+    "tests": []
+  },
+  {
+    "_id": "5e78e063-5333-4e10-87aa-575a7a20690c",
+    "colId": "history",
+    "containerId": "",
+    "name": "localhost:4000/status?server=main1",
+    "url": "localhost:4000/status?server=main1",
+    "method": "GET",
+    "sortNum": 0,
+    "created": "2023-03-12T01:24:53.908Z",
+    "modified": "2023-03-12T01:24:53.908Z",
+    "headers": [],
+    "params": [
+      {
+        "name": "server",
+        "value": "main1",
+        "isPath": false
+      }
+    ],
+    "tests": []
+  }
+]

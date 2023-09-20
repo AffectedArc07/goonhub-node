@@ -6,7 +6,8 @@ module.exports = {
 			'node_modules',
 			'utilities/banners',
 			'.git',
-			'bin/hub-client/hubdata'
+			'bin/hub-client/hubdata',
+			'thunder-tests'
 		],
 		env_development: {
 			NODE_ENV: "development",
