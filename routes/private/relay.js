@@ -1,7 +1,7 @@
 const { send } = require('../../plugins/byondlink')
 
 const relay = async function (req, res) {
-	const server = req.params.server || 'dev'
+	const server = req.query.server || 'dev'
 	const relayData = req.query.data
 
 	if (!relayData) {
