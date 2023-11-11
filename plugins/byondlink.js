@@ -3,6 +3,7 @@ const fs = require('fs')
 const redis = require('./redis')
 const { promisify } = require('util')
 const redisGet = promisify(redis.get).bind(redis)
+const redisTtl = promisify(redis.ttl).bind(redis)
 const { REDIS_CACHE_PREFIX } = require('../utilities/defines')
 
 const Link = new http2byond()
@@ -69,7 +70,7 @@ const send = async function (
 
 	const isJSONTopic = jsonTopicServers.includes(ip)
 	const cacheKey = `${REDIS_CACHE_PREFIX}:${ip}-${port}-${topic}`
-	const meta = { cache: 'miss', jsontopic: !!isJSONTopic }
+	const meta = { cache: 'miss', cacheExpires: cacheTime, jsontopic: !!isJSONTopic }
 	let response
 
 	if (!bypassCache) {
@@ -77,6 +78,7 @@ const send = async function (
 		if (response) {
 			try {
 				meta.cache = 'hit'
+				meta.cacheExpires = await redisTtl(cacheKey)
 				response = JSON.parse(response)
 			} catch {
 				// bad cache value
