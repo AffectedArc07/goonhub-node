@@ -8,9 +8,10 @@ const { send } = require('../plugins/byondlink')
 const servers = [
 	// { ip: 'goondev.goonhub.com', port: 26900 },
 	{ ip: 'goon1.goonhub.com', port: 26100 },
-	{ ip: 'goon2.goonhub.com', port: 26200 },
+	// { ip: 'goon2.goonhub.com', port: 26200 },
 	{ ip: 'goon3.goonhub.com', port: 26300 },
 	{ ip: 'goon4.goonhub.com', port: 26400 },
+	{ ip: 'goon5.goonhub.com', port: 26500 },
 ]
 
 const task = new Task(
