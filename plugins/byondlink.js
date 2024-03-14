@@ -85,6 +85,11 @@ const send = async function (
 				response = null
 			}
 		}
+
+		// We previously cached an error response
+		if (response?.error) {
+			throw new Error(response.error)
+		}
 	}
 
 	if (!response) {
@@ -92,7 +97,14 @@ const send = async function (
 			topic = `{"query": "${topic}", "auth": "anonymous", "source": "spacestation13.com"}`
 		}
 
-		response = await Link.run({ ip, port, topic })
+		try {
+			response = await Link.run({ ip, port, topic })
+		} catch (e) {
+			// Cache a failure to reach a server so that we don't end up DoS-ing it
+			redis.setex(cacheKey, cacheTime, '{"error": "Failed to query server"}')
+			throw new Error(e.message)
+		}
+
 		// Response might still have a terminating null byte
 		if (response?.replace) {
 			// eslint-disable-next-line no-control-regex
