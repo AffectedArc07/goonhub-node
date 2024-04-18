@@ -87,6 +87,25 @@ const send = async function (
 			}
 		}
 
+		// We already started querying a server for this query, we gotta wait for the result
+		if (response?.processing) {
+			let checkInterval
+			return new Promise((resolve, reject) => {
+				checkInterval = setInterval(async () => {
+					response = await redisGet(cacheKey)
+					response = JSON.parse(response)
+
+					if (!response?.processing) {
+						clearInterval(checkInterval)
+						if (response?.error) return reject(response.error)
+
+						meta.cacheExpires = await redisTtl(cacheKey)
+						resolve({ response, meta })
+					}
+				}, 1000)
+			})
+		}
+
 		// We previously cached an error response
 		if (response?.error) {
 			throw new Error(response.error)
@@ -94,6 +113,8 @@ const send = async function (
 	}
 
 	if (!response) {
+		redis.setex(cacheKey, cacheTime, '{"processing": true}')
+
 		if (isJSONTopic) {
 			topic = `{"query": "${topic}", "auth": "anonymous", "source": "spacestation13.com"}`
 		}
