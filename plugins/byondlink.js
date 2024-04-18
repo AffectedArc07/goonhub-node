@@ -7,6 +7,7 @@ const redisTtl = promisify(redis.ttl).bind(redis)
 const { REDIS_CACHE_PREFIX } = require('../utilities/defines')
 
 const Link = new http2byond()
+const queryLogFile = fs.createWriteStream('byond-queries.log', {flags: 'a'})
 
 const goonConfigFile = process.env.GAME_SERVER_CONFIG || 'servers.example.conf'
 let goonServers
@@ -98,6 +99,7 @@ const send = async function (
 		}
 
 		try {
+			queryLogFile.write(`${ip},${port},${topic},${new Date().toISOString()}\n`)
 			response = await Link.run({ ip, port, topic })
 		} catch (e) {
 			// Cache a failure to reach a server so that we don't end up DoS-ing it
