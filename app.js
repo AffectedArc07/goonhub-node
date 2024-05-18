@@ -14,6 +14,7 @@ if (process.env.NODE_ENV === 'production') {
 		origin: [
 			'https://goonhub.com',
 			'https://staging.goonhub.com',
+			'https://tomato.goonhub.com',
 			'https://spacestation13.com',
 			'https://wiki.ss13.co'
 		],
