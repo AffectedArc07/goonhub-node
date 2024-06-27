@@ -18,7 +18,6 @@ const router = async function (req, res) {
 			meta: data.meta
 		})
 	} catch(e) {
-		console.log('Failed to fetch status for server', server, ip, port, e)
 		res.status(500).send({ message: 'Unable to query server' })
 	}
 }

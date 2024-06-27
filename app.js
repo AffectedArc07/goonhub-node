@@ -24,7 +24,9 @@ if (process.env.NODE_ENV === 'production') {
 	app.use(cors())
 }
 
-app.use(logger('dev'))
+if (process.env.NODE_ENV === 'development') {
+	app.use(logger('dev'))
+}
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
 app.use(cookieParser())
