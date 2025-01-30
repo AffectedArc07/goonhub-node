@@ -18,8 +18,10 @@ if (process.env.NODE_ENV === 'production') {
 			'https://spacestation13.com',
 			'https://wiki.ss13.co'
 		],
-		methods: 'GET'
+		methods: 'GET',
+		credentials: true
 	}))
+	app.options('*', cors())
 } else {
 	app.use(cors())
 }
