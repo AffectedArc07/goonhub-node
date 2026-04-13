@@ -11,12 +11,31 @@ const Link = new http2byond()
 const goonConfigFile = process.env.GAME_SERVER_CONFIG || 'servers.example.conf'
 let goonServers
 
-const jsonTopicServers = [
-	'sage.beestation13.com',
-	'acacia.beestation13.com',
-	'game.austation.net',
-	'byond.paradisestation.org'
-]
+const REQTYPE_RAWTOPIC = 1;
+const REQTYPE_JSONTOPIC = 2;
+
+const RESTYPE_URLLIST = 1;
+const RESTYPE_JSON = 2;
+
+// Metadata to use
+const jsonTopicServers = {
+	'sage.beestation13.com': {
+		reqtype: REQTYPE_JSONTOPIC,
+		restype: RESTYPE_JSON
+	},
+	'acacia.beestation13.com': {
+		reqtype: REQTYPE_JSONTOPIC,
+		restype: RESTYPE_JSON
+	},
+	'game.austation.net': {
+		reqtype: REQTYPE_JSONTOPIC,
+		restype: RESTYPE_JSON
+	},
+	'byond.paradisestation.org': {
+		reqtype: REQTYPE_RAWTOPIC,
+		restype: RESTYPE_JSON
+	}
+}
 
 /**
  * Load the goon central config file
@@ -68,9 +87,20 @@ const send = async function (
 	if (!ip || !port) throw new Error('Unable to figure out who to query')
 	if (typeof topic === 'object') topic = new URLSearchParams(topic).toString()
 
-	const isJSONTopic = jsonTopicServers.includes(ip)
+	// Figure out the kind of request/response scheme to use
+	let req_type = REQTYPE_RAWTOPIC;
+	let res_type = RESTYPE_URLLIST;
+
+	const isJsonTopic = Object.keys(jsonTopicServers).includes(ip);
+
+	if (isJsonTopic) {
+		const jtopic_data = jsonTopicServers[ip];
+		req_type = jtopic_data.reqtype;
+		res_type = jtopic_data.restype;
+	}
+
 	const cacheKey = `${REDIS_CACHE_PREFIX}:${ip}-${port}-${topic}`
-	const meta = { cache: 'miss', cacheExpires: cacheTime, jsontopic: !!isJSONTopic }
+	const meta = { cache: 'miss', cacheExpires: cacheTime, jsontopic: (req_type == REQTYPE_JSONTOPIC) }
 	let response
 
 	if (!bypassCache) {
@@ -114,15 +144,17 @@ const send = async function (
 	if (!response) {
 		redis.setex(cacheKey, cacheTime, '{"processing": true}')
 
-		if (isJSONTopic) {
+		if (req_type == REQTYPE_JSONTOPIC) {
 			topic = `{"query": "${topic}", "auth": "anonymous", "source": "spacestation13.com"}`
 		}
 
 		try {
 			response = await Link.run({ ip, port, topic })
+			console.log(response);
 		} catch (e) {
 			// Cache a failure to reach a server so that we don't end up DoS-ing it
 			redis.setex(cacheKey, cacheTime, '{"error": "Failed to query server"}')
+			console.log("fucked it");
 			throw new Error(e.message)
 		}
 
@@ -132,7 +164,7 @@ const send = async function (
 			response = response.replace(new RegExp("\u0000", 'g'), '')
 		}
 
-		if (isJSONTopic) {
+		if (res_type == RESTYPE_JSON) {
 			response = JSON.parse(response)
 		} else {
 			response = Object.fromEntries(new URLSearchParams(response))
